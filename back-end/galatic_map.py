@@ -9,7 +9,7 @@ os.environ["SSL_CERT_FILE"] = certifi.where()
 def query_gaia_and_create_png():
     # Query Gaia catalog for a specific region
     job = Gaia.launch_job_async(
-        "SELECT TOP 500000 l, b, phot_g_mean_mag "
+        "SELECT TOP 5000000 l, b, phot_g_mean_mag "
         "FROM gaiadr3.gaia_source WHERE l BETWEEN 0 AND 360 AND b BETWEEN -90 AND 90 "
         "ORDER BY random_index"
     )
