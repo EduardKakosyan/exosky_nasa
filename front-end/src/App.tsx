@@ -1,11 +1,12 @@
 import { useState } from 'react'
+import { Sky } from './components/Sky'
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
     <>
-      <h1 className='bg-blue-200'>Hello World</h1>
+      <Sky />
     </>
       
   )
