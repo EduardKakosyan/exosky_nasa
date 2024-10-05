@@ -3,7 +3,7 @@
 
 # Back End
 back-end/dist/
-back-end/celestial/db/*
+back-end/pipeline/celestial/db/
 
 
 # Front End
