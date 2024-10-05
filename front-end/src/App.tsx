@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { Sky } from './components/Sky'
+import { CSky } from './components/CSky'
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
     <>
-      <Sky />
+      {/* <Sky /> */}
+      <CSky />
     </>
       
   )
