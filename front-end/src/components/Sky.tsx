@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export function Sky() {
-   const imageSrc: string = '../../public/sky_image.png';
+   const imageSrc: string = 'sky_image.png';
    const mountRef = useRef<HTMLDivElement>(null);
    const [isDrawing, setIsDrawing] = useState(false);
    const [camera, setCamera] = useState<THREE.PerspectiveCamera | null>(null);
