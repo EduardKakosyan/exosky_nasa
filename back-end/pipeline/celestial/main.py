@@ -1,39 +1,32 @@
-"""Main Function to run the celestial pipeline
-
-@author: Eduard Kakosyan
-"""
-
-# imports
-
-# defaults
-import os
-import sys
-import threading
-import queue
-import time
-import certifi
 import logging
-
-# 3rd party ports
 import psycopg2
 import numpy as np
 from astroquery.gaia import Gaia
+from astropy.coordinates import SkyCoord
+import astropy.units as u
+
+import os
+import certifi
+import threading
+import queue
+import time
 
 # local imports
+from writer import writer
 
-
-# this is to make the ssl work
+logging.basicConfig(level=logging.INFO)
 os.environ["SSL_CERT_FILE"] = certifi.where()
 
-# GLOBALS
+# Global queue for passing data between threads
+
 star_queue = queue.Queue()
-max_rows = 5000000
+max_rows = 50000000
 max_chunk = 100000
 current_processed_rows = 0
 
 
 def _connect_to_celestial():
-    """Establish connection to the celestial database."""
+    """Establish connection to big data."""
     conn = psycopg2.connect(
         host="localhost",
         database="star_catalog",
@@ -45,11 +38,7 @@ def _connect_to_celestial():
 
 
 def _truncate_star_data(conn):
-    """Clears the database on running the celestial pipeline
-
-    :param conn: The connection to the database
-    :return: None
-    """
+    """Truncate the star_data table to remove existing data."""
     with conn.cursor() as cursor:
         try:
             cursor.execute("TRUNCATE TABLE star_data;")
@@ -59,12 +48,10 @@ def _truncate_star_data(conn):
             conn.rollback()
 
 
-def _query_gaia(offset=0, limit=100000):
-    """Query the Gaia database for star data
+def _query_gaia(offset=817838, limit=100000):
+    """Query Gaia data from the Gaia catalog.
 
-    :param offset: The offset of the query
-    :param limit: The limit of the query
-    :return: The results of the query
+    :return: the results of the query
     """
     try:
         job = Gaia.launch_job_async(
@@ -80,7 +67,7 @@ def _query_gaia(offset=0, limit=100000):
 
 
 def process_star_row(row):
-    source_id = int(row["SOURCE_ID"])
+    source_id = row["SOURCE_ID"]
     l = float(row["l"])
     b = float(row["b"])
     parallax = row["parallax"] if row["parallax"] is not None else None
@@ -93,15 +80,27 @@ def process_star_row(row):
     if any(np.isnan(value) for value in [l, b, parallax, mag, bp_rp, bp_g, g_rp]):
         return None  # Return None to skip this star
 
-    # Convert coordinates to Cartesian
-    x, y, z = galactic_to_cartesian(l, b, parallax)
+    coord = SkyCoord(l=l * u.degree, b=b * u.degree, distance=(1 / parallax) * u.arcsecond, frame='galactic')
+    x = coord.cartesian.x.value
+    y = coord.cartesian.y.value
+    z = coord.cartesian.z.value
 
-    return [source_id, float(x), float(y), float(z), parallax, mag, bp_rp, bp_g, g_rp]
+    return [
+        source_id,
+        float(x),
+        float(y),
+        float(z),
+        parallax,
+        mag,
+        bp_rp,
+        bp_g,
+        g_rp,
+    ]
 
 
 def reader_thread():
     """Thread for reading data from Gaia API."""
-    offset = 0
+    offset = 817838
     limit = 100000
 
     while offset < max_rows:
@@ -134,7 +133,7 @@ def writer_thread(conn):
 
         stars_batch.append(star)
 
-        if len(stars_batch) >= 1000:
+        if len(stars_batch) >= 10000:
             try:
                 writer(stars_batch, "star_data", conn)
                 stars_batch = []  # Reset batch after writing
@@ -147,10 +146,10 @@ def main():
     start = time.time()
 
     # Connect to the database
-    conn = _connect_to_big_data()
+    conn = _connect_to_celestial()
 
     # Truncate existing data
-    _truncate_star_data(conn)
+    # _truncate_star_data(conn)
 
     # Start reader and writer threads
     reader = threading.Thread(target=reader_thread)
