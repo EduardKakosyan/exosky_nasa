@@ -1,0 +1,13 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:latest
+    container_name: star_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: star_catalog
+    ports:
+      - "5431:5432"
+    volumes:
+      - ./db:/var/lib/postgresql/data
