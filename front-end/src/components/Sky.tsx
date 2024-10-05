@@ -25,7 +25,8 @@ export function Sky() {
       const sphere = new THREE.Mesh(geometry, material);
       scene.add(sphere);
 
-      camera.position.set(0.5, -0.025, 0.1);
+      // camera.position.set(0.5, -0.025, 0.1);
+      camera.position.set(150, 0, 40)
 
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
@@ -99,3 +100,4 @@ export function Sky() {
 
    return <div ref={mountRef} style={{ width: '100%', height: '100vh' }} />;
 };
+ 
