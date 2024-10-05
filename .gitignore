@@ -3,5 +3,7 @@
 
 # Back End
 back-end/dist/
+back-end/celestial/db/
+
 
 # Front End
