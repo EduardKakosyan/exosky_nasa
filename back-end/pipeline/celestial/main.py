@@ -48,7 +48,7 @@ def _truncate_star_data(conn):
             conn.rollback()
 
 
-def _query_gaia(offset=817838, limit=100000):
+def _query_gaia(offset=3000000, limit=100000):
     """Query Gaia data from the Gaia catalog.
 
     :return: the results of the query
@@ -80,7 +80,12 @@ def process_star_row(row):
     if any(np.isnan(value) for value in [l, b, parallax, mag, bp_rp, bp_g, g_rp]):
         return None  # Return None to skip this star
 
-    coord = SkyCoord(l=l * u.degree, b=b * u.degree, distance=(1 / parallax) * u.arcsecond, frame='galactic')
+    coord = SkyCoord(
+        l=l * u.degree,
+        b=b * u.degree,
+        distance=(1 / parallax) * u.arcsecond,
+        frame="galactic",
+    )
     x = coord.cartesian.x.value
     y = coord.cartesian.y.value
     z = coord.cartesian.z.value
@@ -100,7 +105,7 @@ def process_star_row(row):
 
 def reader_thread():
     """Thread for reading data from Gaia API."""
-    offset = 817838
+    offset = 3000000
     limit = 100000
 
     while offset < max_rows:

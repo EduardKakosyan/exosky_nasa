@@ -35,11 +35,11 @@ def get_kepler_coordinates():
     simbad = Simbad()
     result = simbad.query_object("Kepler-186f")
 
-    if result is None or 'RA' not in result.columns or 'DEC' not in result.columns:
+    if result is None or "RA" not in result.columns or "DEC" not in result.columns:
         raise ValueError("Failed to retrieve Kepler coordinates from SIMBAD.")
 
-    ra = result['RA'].data[0]
-    dec = result['DEC'].data[0]
+    ra = result["RA"].data[0]
+    dec = result["DEC"].data[0]
 
     # Parse RA and DEC into degrees
     coord = SkyCoord(ra, dec, unit=(u.hourangle, u.deg))
@@ -47,7 +47,9 @@ def get_kepler_coordinates():
     return l, b
 
 
-def query_star_data(kepler_x, kepler_y, kepler_z, limit=1000000):  # Set limit to 1 million
+def query_star_data(
+    kepler_x, kepler_y, kepler_z, limit=1000000
+):  # Set limit to 1 million
     """Query star_data table for stars around Kepler-186f."""
     with _connect_to_celestial() as conn:
         with conn.cursor() as cursor:
@@ -65,8 +67,12 @@ def query_star_data(kepler_x, kepler_y, kepler_z, limit=1000000):  # Set limit t
 
 def convert_to_cartesian(l, b, parallax=None):
     """Convert galactic coordinates to Cartesian."""
-    coord = SkyCoord(l=l * u.degree, b=b * u.degree, distance=(1 / parallax) * u.arcsecond if parallax else None,
-                     frame='galactic')
+    coord = SkyCoord(
+        l=l * u.degree,
+        b=b * u.degree,
+        distance=(1 / parallax) * u.arcsecond if parallax else None,
+        frame="galactic",
+    )
     return coord.cartesian.x.value, coord.cartesian.y.value, coord.cartesian.z.value
 
 
@@ -75,13 +81,19 @@ def process_and_store_data(stars):
     with _connect_to_celestial() as conn:
         with conn.cursor() as cursor:
             cursor.execute(
-                "CREATE TABLE IF NOT EXISTS stars_relative_to_kepler (source_id BIGINT, x FLOAT, y FLOAT, z FLOAT);")
+                "CREATE TABLE IF NOT EXISTS stars_relative_to_kepler (source_id BIGINT, x FLOAT, y FLOAT, z FLOAT);"
+            )
 
             for source_id, x, y, z in stars:
                 # Convert NumPy types to native Python float types
                 cursor.execute(
                     "INSERT INTO stars_relative_to_kepler (source_id, x, y, z) VALUES (%s, %s, %s, %s)",
-                    (source_id, float(x), float(y), float(z))  # Ensure float conversion
+                    (
+                        source_id,
+                        float(x),
+                        float(y),
+                        float(z),
+                    ),  # Ensure float conversion
                 )
             conn.commit()
 
@@ -93,13 +105,15 @@ def plot_milky_way(stars):
     y_stars = np.array([star[2] for star in stars])
     z_stars = np.array([star[3] for star in stars])
 
-    sizes = np.clip(1000 * np.log10(10 / np.abs(z_stars)), 1, 1000)  # Size based on distance
+    sizes = np.clip(
+        1000 * np.log10(10 / np.abs(z_stars)), 1, 1000
+    )  # Size based on distance
 
     plt.figure(figsize=(40, 20))
-    plt.scatter(x_stars, y_stars, s=sizes, color='white')
-    plt.gca().set_facecolor('black')
+    plt.scatter(x_stars, y_stars, s=sizes, color="white")
+    plt.gca().set_facecolor("black")
     plt.title("Sky Image from Kepler-186f Perspective", fontsize=24)
-    plt.savefig("kepler186f_sky_image.png", facecolor='black')
+    plt.savefig("kepler186f_sky_image.png", facecolor="black")
 
 
 def main():
@@ -110,14 +124,19 @@ def main():
     kepler_l, kepler_b = get_kepler_coordinates()
     print(f"Kepler-186f coordinates: l={kepler_l}, b={kepler_b}")
     kepler_x, kepler_y, kepler_z = convert_to_cartesian(kepler_l, kepler_b)
-    print(f"Kepler-186f Cartesian coordinates: x={kepler_x}, y={kepler_y}, z={kepler_z}")
+    print(
+        f"Kepler-186f Cartesian coordinates: x={kepler_x}, y={kepler_y}, z={kepler_z}"
+    )
 
     # Query the star_data table, limiting to 1 million rows
     stars = query_star_data(kepler_x, kepler_y, kepler_z, limit=1000000)
     print("Got the stars")
 
     # Center stars around Kepler-186f
-    stars_relative = [(source_id, x - kepler_x, y - kepler_y, z - kepler_z) for (source_id, x, y, z) in stars]
+    stars_relative = [
+        (source_id, x - kepler_x, y - kepler_y, z - kepler_z)
+        for (source_id, x, y, z) in stars
+    ]
 
     # Store relative stars in a new table
     process_and_store_data(stars_relative)
