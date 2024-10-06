@@ -35,7 +35,7 @@ def query_postgres():
     )
     cur = conn.cursor()
     cur.execute(
-        "SELECT parallax, phot_g_mean_mag, x, y, z, bp_rp, bp_g, g_rp FROM star_data;"
+        "SELECT parallax, phot_g_mean_mag, x, y, z, bp_rp, bp_g, g_rp FROM star_data LIMIT 5000000;"
     )
     rows = cur.fetchall()
     print(f"Retrieved {len(rows)} rows from the database.")  # Debugging line
@@ -56,7 +56,7 @@ def query_postgres():
     bp_g = np.array([row[6] for row in rows])
     g_rp = np.array([row[7] for row in rows])
 
-    distance_pc_gaia = np.where(parallax > 0, 1000 / parallax, 0)
+    distance_pc_gaia = np.where(parallax > 0, 1 / parallax, 0)
     return x_gaia, y_gaia, z_gaia, distance_pc_gaia, mag, bp_rp, bp_g, g_rp
 
 
@@ -86,9 +86,8 @@ def create_star_colors(bp_rp, bp_g, g_rp, new_mag):
     star_colors[:, :3] = np.clip(star_colors[:, :3], 0, 1)
 
     # Identify the indices of the 20 largest stars based on magnitude
-    largest_star_indices = np.argsort(new_mag)[:30]
+    largest_star_indices = np.argsort(new_mag)[:20]
 
-    # Set the colors of the largest stars to white
     star_colors[largest_star_indices] = [1, 1, 1, 1]
 
     return star_colors
@@ -98,23 +97,27 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
     # Query PostgreSQL to get star data
     result = query_postgres()
     if result is None:
-        return  # Exit if there's no data
+        return
     x_gaia, y_gaia, z_gaia, distance_pc_gaia, mag, bp_rp, bp_g, g_rp = result
+
+    print(x_gaia[0])
 
     # Convert the exoplanet's galactic coordinates to Cartesian
     planet_x, planet_y, planet_z = galactic_to_cartesian(galactic_long, galactic_lat, distance_pc)
+
+    print(planet_x)
 
     # Shift the star positions
     shifted_x = x_gaia - planet_x
     shifted_y = y_gaia - planet_y
     shifted_z = z_gaia - planet_z
 
-    # Convert back to galactic coordinates
+    print(shifted_x[0] == x_gaia[0])
+
     l_new, b_new, _ = cartesian_to_galactic(shifted_x, shifted_y, shifted_z)
 
     new_mag = transform_mag(mag, distance_pc_gaia, distance_pc)
 
-    # Adjust the scaling factor and threshold for star sizes
     normalized_distances = (distance_pc_gaia - np.min(distance_pc_gaia)) / (
                 np.max(distance_pc_gaia) - np.min(distance_pc_gaia))
 
@@ -127,7 +130,7 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
     star_colors = create_star_colors(bp_rp, bp_g, g_rp, new_mag)
 
     # Identify the indices of the 30 brightest stars
-    brightest_star_indices = np.argsort(new_mag)[:30]
+    brightest_star_indices = np.argsort(new_mag)[:20]
 
     # Plotting
     plt.figure(figsize=(80, 20))  # Adjusted figure size to better resemble the Milky Way proportions
@@ -136,7 +139,6 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
     # Plot all stars except the brightest 30
     scatter = plt.scatter(l_new_shifted, b_new, s=sizes, color=star_colors, alpha=0.8)
 
-    # Plot the brightest 30 stars on top with alpha=1
     scatter = plt.scatter(l_new_shifted[brightest_star_indices], b_new[brightest_star_indices],
                           s=sizes[brightest_star_indices], color=star_colors[brightest_star_indices], alpha=1.0)
 
@@ -154,6 +156,7 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
 
 if __name__ == "__main__":
     try:
-        create_png_for_exoplanet("Kepler-186f", 36, 12, 152)
+        create_png_for_exoplanet("Planet Right", 90, 0, 8000)
+        create_png_for_exoplanet("Earth", 0, 0, 0)
     except Exception as e:
         print(f"An error occurred: {e}")
