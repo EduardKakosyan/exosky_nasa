@@ -8,7 +8,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/earth" element={<CSky />} />
+        <Route path="/view" element={<CSky />} />
       </Routes>
     </Router>
   );
