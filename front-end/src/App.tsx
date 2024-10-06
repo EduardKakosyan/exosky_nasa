@@ -8,7 +8,9 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/view" element={<CSky />} />
+        <Route path="/earth" element={<CSky imgSrc='sky_image.jpg'/>} />
+        <Route path="/55" element={<CSky imgSrc='55_Cancri_e.png'/>} />
+        <Route path="/wasp" element={<CSky imgSrc='WASP-12b.png'/>} />
       </Routes>
     </Router>
   );

@@ -6,13 +6,17 @@ import { RightMouse } from './icons/right-mouse';
 import { useNavigate } from 'react-router-dom';
 import { HomeIcon } from './icons/home-icon';
 
-export function CSky() {
+type Props = {
+   imgSrc: string;
+};
+
+export function CSky({ imgSrc }: Props) {
    const navigate = useNavigate();
    function home() {
       navigate('/');
    }
 
-   const imageSrc: string = 'sky_image.png';
+   const imageSrc: string = imgSrc;
    const mountRef = useRef<HTMLDivElement>(null);
    const [camera, setCamera] = useState<THREE.PerspectiveCamera | null>(null);
    const [controls, setControls] = useState<OrbitControls | null>(null);
