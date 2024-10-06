@@ -5,9 +5,14 @@ import { ExploreButton } from "../components/explore-button";
 import { PlanetCard } from './planet-card'
 import { HomeButton } from "../components/home-button";
 
-const planetsSrc = [
-   "MapOfEarth.jpg",
-];
+type PlanetObject ={
+   name: string;
+   imgSrc: string;
+}
+
+const planetArray: PlanetObject[] = [
+   {name: "Earth", imgSrc: "MapOfEarth.jpg"},
+]
 
 export function HomeBackground() {
    const [exploreMode, setExploreMode] = useState(false);
@@ -33,9 +38,9 @@ export function HomeBackground() {
                   <HomeButton onHomeCall={() => setExploreMode(false)}/>
                </div>
 
-               {planetsSrc.map((src, index) => (
+               {planetArray.map((item, index) => (
                   <div key={index} className="z-10">
-                     <PlanetCard imgSrc={src} />
+                     <PlanetCard imgSrc={item.imgSrc} planetName={item.name} />
                   </div>
                ))}
                
