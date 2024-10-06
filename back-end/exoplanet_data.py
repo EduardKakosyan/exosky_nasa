@@ -1,5 +1,11 @@
 exoplanets = [
   {
+      "name": "Earth",
+      "galactic_longitude": 0,
+      "galactic_latitude": 0,
+      "distance_pc": 0
+  },
+  {
       "name": "Kepler-186f",
       "galactic_longitude": 36.23,
       "galactic_latitude": 12.75,
