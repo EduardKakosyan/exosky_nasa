@@ -48,7 +48,7 @@ def _truncate_star_data(conn):
             conn.rollback()
 
 
-def _query_gaia(offset=3000000, limit=100000):
+def _query_gaia(offset=0, limit=100000):
     """Query Gaia data from the Gaia catalog.
 
     :return: the results of the query
@@ -83,7 +83,7 @@ def process_star_row(row):
     coord = SkyCoord(
         l=l * u.degree,
         b=b * u.degree,
-        distance=(1 / parallax) * u.arcsecond,
+        distance=(1000 / parallax) * u.arcsecond,
         frame="galactic",
     )
     x = coord.cartesian.x.value
@@ -105,7 +105,7 @@ def process_star_row(row):
 
 def reader_thread():
     """Thread for reading data from Gaia API."""
-    offset = 3000000
+    offset = 0
     limit = 100000
 
     while offset < max_rows:
@@ -154,7 +154,7 @@ def main():
     conn = _connect_to_celestial()
 
     # Truncate existing data
-    # _truncate_star_data(conn)
+    _truncate_star_data(conn)
 
     # Start reader and writer threads
     reader = threading.Thread(target=reader_thread)
