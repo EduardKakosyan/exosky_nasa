@@ -3,8 +3,15 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LeftMouse } from './icons/left-mouse';
 import { RightMouse } from './icons/right-mouse';
+import { useNavigate } from 'react-router-dom';
+import { HomeIcon } from './icons/home-icon';
 
 export function CSky() {
+   const navigate = useNavigate();
+   function home() {
+      navigate('/');
+   }
+
    const imageSrc: string = 'sky_image.png';
    const mountRef = useRef<HTMLDivElement>(null);
    const [camera, setCamera] = useState<THREE.PerspectiveCamera | null>(null);
@@ -159,6 +166,10 @@ export function CSky() {
             <div className="px-4 py-2 bg-black rounded-[6px]  relative group transition duration-200 text-white hover:bg-transparent">
                {isDrawingMode ? 'Switch to View Mode' : 'Switch to Drawing Mode'}
             </div>
+         </button>
+
+         <button onClick={home} className='absolute right-5 top-5 border border-white rounded-full p-2'>
+            <HomeIcon className='w-7 h-7 text-white' />
          </button>
 
          <div className='absolute bottom-5 right-10 z-10 text-white flex flex-col bg-black border border-blue-500 rounded-lg p-4 text-sm bg-opacity-70 gap-3'>
