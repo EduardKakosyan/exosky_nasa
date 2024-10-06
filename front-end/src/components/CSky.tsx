@@ -1,6 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { LeftMouse } from './icons/left-mouse';
+import { RightMouse } from './icons/right-mouse';
 
 export function CSky() {
    const imageSrc: string = 'sky_image.png';
@@ -152,10 +154,28 @@ export function CSky() {
 
    return (
       <div>
-         <button onClick={toggleMode} style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10, backgroundColor: 'white' }}>
-            {isDrawingMode ? 'Switch to Camera Mode' : 'Switch to Drawing Mode'}
+         <button className="p-[3px] absolute top-5 left-5 z-10 bg-white  rounded-md" onClick={toggleMode}>
+            <div className="absolute inset-0 bg-gradient-to-r from-sky-500 to-blue-500 rounded-lg" />
+            <div className="px-4 py-2 bg-black rounded-[6px]  relative group transition duration-200 text-white hover:bg-transparent">
+               {isDrawingMode ? 'Switch to View Mode' : 'Switch to Drawing Mode'}
+            </div>
          </button>
+
+         <div className='absolute bottom-5 right-10 z-10 text-white flex flex-col bg-black border border-blue-500 rounded-lg p-4 text-sm bg-opacity-70 gap-3'>
+            <div className='flex flex1 flex-row gap-3 items-center'>
+               <LeftMouse className='w-5 h-5' />
+               <p className='flex flex-1'>Move Camera</p>
+            </div>
+            
+           <div className='flex flex1 flex-row gap-3 items-center'>
+               <RightMouse className='w-5 h-5' />
+               <p className='flex flex-1'>Create and click-back to connect</p>
+            </div>
+         </div>
+
          <div ref={mountRef} style={{ width: '100%', height: '100vh' }} />
       </div>
    );
+
+   
 }
