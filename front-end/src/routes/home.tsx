@@ -4,16 +4,8 @@ import { StarsBackground } from "../components/ui/stars-background";
 import { ExploreButton } from "../components/explore-button";
 import { PlanetCard } from '../layout/planet-card'
 import { HomeButton } from "../components/home-button";
+import { planetArray } from "../data/data";
 
-type PlanetObject ={
-   name: string;
-   imgSrc: string;
-   href: string;
-}
-
-const planetArray: PlanetObject[] = [
-   {name: "Earth", imgSrc: "MapOfEarth.jpg", href: "earth"},
-]
 
 export function Home() {
    const [exploreMode, setExploreMode] = useState(false);
@@ -34,18 +26,21 @@ export function Home() {
 
 
          {exploreMode && (
-            <div className="w-screen flex flex-col">
+            <div className="w-screen h-screen flex flex-col mt-20">
                <div className="absolute top-4 left-4 z-50">
                   <HomeButton onHomeCall={() => setExploreMode(false)}/>
                </div>
 
-               {planetArray.map((item, index) => (
-                  <div key={index} className="z-10">
-                     <PlanetCard imgSrc={item.imgSrc} planetName={item.name} href={item.href}/>
+               <div className="flex justify-center items-center w-full h-full">
+                  <div className="grid grid-cols-2 gap-2 h-full mx-auto">
+                     {planetArray.map((item, index) => (
+                     <div key={index} className="z-10 mx-10">
+                        <PlanetCard planetObject={item}/>
+                     </div>
+                  ))}
                   </div>
-               ))}
+               </div>
                
-
             </div>
          )};
 
