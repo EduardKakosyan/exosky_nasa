@@ -13,6 +13,9 @@ export function CSky() {
    const planetXTextMeshRef = useRef<THREE.Mesh | null>(null);
    const planetYTextMeshRef = useRef<THREE.Mesh | null>(null);
 
+   const pointsRef = useRef<THREE.Vector3[]>([]);
+   const linesRef = useRef<THREE.Line[]>([]);
+
    useEffect(() => {
       // Set up camera and renderer
       const mount = mountRef.current!;
@@ -25,7 +28,7 @@ export function CSky() {
       const geometry = new THREE.SphereGeometry(500, 64, 32);
       geometry.scale(-1, 1, 1);
       const texture = new THREE.TextureLoader().load(imageSrc);
-      const material = new THREE.MeshBasicMaterial({ map: texture });
+      const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
       const sphere = new THREE.Mesh(geometry, material);
       scene.add(sphere);
 
@@ -116,16 +119,65 @@ export function CSky() {
 
       window.addEventListener('mousemove', handleHover);
 
+      // Create a dot at the given position
+      const createDot = (position: THREE.Vector3) => {
+         const dotGeometry = new THREE.SphereGeometry(10, 32, 32);
+         const dotMaterial = new THREE.MeshBasicMaterial({ color: 'green' });
+         const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+
+         dot.position.copy(position);
+         scene.add(dot);
+      };
+
+      // Create a line between two points
+      const createLine = (point1: THREE.Vector3, point2: THREE.Vector3) => {
+         const material = new THREE.LineBasicMaterial({ color: 'white' });
+         const points = [point1, point2];
+         const geometry = new THREE.BufferGeometry().setFromPoints(points);
+         const line = new THREE.Line(geometry, material);
+
+         scene.add(line);
+         linesRef.current.push(line);
+      };
+
+      // Update the line between the last two points
+      const updateLine = () => {
+         const points = pointsRef.current;
+
+         if (points.length >= 2) {
+            const lastPoint = points[points.length - 1];
+            const secondLastPoint = points[points.length - 2];
+
+            createLine(secondLastPoint, lastPoint);
+         }
+      };
+
       // Handle mouse clicks (for color change)
       const handleClick = (event: MouseEvent) => {
+         const rect = renderer.domElement.getBoundingClientRect();
+
          mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
          mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
          raycaster.setFromCamera(mouse, camera!);
-         const intersects = raycaster.intersectObjects([planetX, planetY]);
 
+         raycaster.far = 1000;
+
+         const intersects = raycaster.intersectObjects([sphere], false);
+
+         // If the ray intersects with the sphere, create a dot at the intersection point
          if (intersects.length > 0) {
             const intersectedObject = intersects[0].object;
+            const intersectedPoint = intersects[0].point.clone();
+
+            console.log('Intersected point:', intersectedPoint);
+
+            createDot(intersectedPoint); // Create a dot at the intersection point
+
+            pointsRef.current.push(intersectedPoint); // Add the intersection point to the points array
+
+            updateLine(); // Update the line between the last two points
+
             if (intersectedObject === planetX) {
                console.log('Planet X clicked!');
                planetX.material.color.set('yellow');
@@ -133,6 +185,9 @@ export function CSky() {
                console.log('Planet Y clicked!');
                planetY.material.color.set('yellow');
             }
+         }
+         else {
+            console.log('No intersection');
          }
       };
 
