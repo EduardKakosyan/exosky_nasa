@@ -121,8 +121,8 @@ export function CSky() {
 
       // Create a dot at the given position
       const createDot = (position: THREE.Vector3) => {
-         const dotGeometry = new THREE.SphereGeometry(10, 32, 32);
-         const dotMaterial = new THREE.MeshBasicMaterial({ color: 'green' });
+         const dotGeometry = new THREE.SphereGeometry(5, 32, 32);
+         const dotMaterial = new THREE.MeshBasicMaterial({ color: 'white' });
          const dot = new THREE.Mesh(dotGeometry, dotMaterial);
 
          dot.position.copy(position);
