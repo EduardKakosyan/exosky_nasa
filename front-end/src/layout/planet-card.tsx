@@ -14,7 +14,7 @@ export function PlanetCard({ planetObject }: Props) {
    }
 
    return (
-      <div className="border border-gray-700 rounded-2xl bg-gray-500 bg-opacity-20 flex flex-row z-20 w-[400px] h-[180px] items-center">
+      <div className="border border-gray-700 rounded-2xl bg-gray-500 bg-opacity-20 flex flex-row z-20 w-[600px] h-[180px] items-center">
          <div>
             <Planet imgSrc={planetObject.imgSrc} />
          </div>
