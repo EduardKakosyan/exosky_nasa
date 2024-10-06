@@ -16,6 +16,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-element-to-jsx-string": "^15.0.0",
+    "react-router-dom": "^6.26.2",
     "react-three-fiber": "^6.0.13",
     "tailwind-merge": "^2.5.3",
     "three": "^0.169.0"
