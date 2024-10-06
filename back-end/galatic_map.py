@@ -3,22 +3,23 @@ import certifi
 import matplotlib.pyplot as plt
 import numpy as np
 from astropy import units as u
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, Galactic, CartesianRepresentation
 import psycopg2
 from matplotlib.colors import Normalize
 import matplotlib.cm as cm
+from astroquery.simbad import Simbad
 
 os.environ["SSL_CERT_FILE"] = certifi.where()
 
 
 def cartesian_to_galactic(x, y, z):
     """Convert Cartesian coordinates to Galactic coordinates."""
-    coord = SkyCoord(
-        x=x * u.pc, y=y * u.pc, z=z * u.pc, representation_type="cartesian"
-    )
-    l = coord.galactic.l.deg
-    b = coord.galactic.b.deg  # Galactic latitude in degrees
-    distance = coord.galactic.distance.pc  # Distance in parsecs
+    cartesian = CartesianRepresentation(x=x * u.pc, y=y * u.pc, z=z * u.pc)
+    galactic_coord = Galactic(cartesian)
+    l = galactic_coord.l.deg
+    b = galactic_coord.b.deg
+    distance = galactic_coord.distance.pc
+
     return l, b, distance
 
 
@@ -29,23 +30,36 @@ def transform_mag(mag, distance_pc, new_distance_pc):
 
 def color_stars(bp_rp, bp_g, g_rp):
     """Map bp_rp to colors and adjust brightness using bp_g and g_rp."""
-    # Use a different colormap (e.g., 'cividis' or 'viridis')
     cmap = plt.get_cmap("cividis")  # Choose a color map
     norm = Normalize(vmin=min(bp_rp), vmax=max(bp_rp))  # Normalize bp_rp values
     star_colors = cmap(norm(bp_rp))
 
-    # Modify brightness scaling for a better visual effect
     brightness_scale = 1.5 / (1 + np.exp(-bp_g + g_rp))  # Adjust the scaling factor
-
-    # Apply brightness scaling to the colors (affect only RGB channels)
-    star_colors[:, :3] *= brightness_scale[:, np.newaxis] * 0.8  # Adjust the factor to control brightness
+    star_colors[:, :3] *= brightness_scale[:, np.newaxis] * 0.8  # Adjust brightness
 
     return star_colors
 
 
-def query_postgresql_and_create_png(
-    planet_name, galactic_long, galactic_lat, distance_pc
-):
+def fetch_galactic_coordinates(planet_name):
+    """Fetch galactic coordinates of a planet from SIMBAD."""
+    simbad = Simbad()
+    result = simbad.query_object(planet_name)
+
+    if result is None:
+        raise ValueError(f"No results found for {planet_name}")
+
+    # Extract coordinates
+    ra = result['RA'].data[0]
+    dec = result['DEC'].data[0]
+
+    # Convert to Galactic coordinates
+    coord = SkyCoord(ra=ra, dec=dec, unit=(u.hourangle, u.deg), frame='icrs')
+    galactic_coord = coord.galactic
+    return galactic_coord.l.deg, galactic_coord.b.deg
+
+
+def query_postgresql_and_create_png(planet_name, distance_pc):
+    """Query PostgreSQL for star data and create a PNG."""
     # Connect to PostgreSQL database
     conn = psycopg2.connect(
         dbname="star_catalog",
@@ -76,7 +90,10 @@ def query_postgresql_and_create_png(
     g_rp = np.array([row[7] for row in rows])  # g_rp color data
 
     # Convert parallax (in milliarcseconds) to distance in parsecs
-    distance_pc_gaia = 1 / parallax
+    distance_pc_gaia = 1000 / parallax
+
+    # Fetch the galactic coordinates for the specified planet
+    galactic_long, galactic_lat = fetch_galactic_coordinates(planet_name)
 
     # Convert planet's galactic coordinates to Cartesian
     planet_coord = SkyCoord(
@@ -99,10 +116,12 @@ def query_postgresql_and_create_png(
     # Convert the shifted Cartesian coordinates to galactic coordinates
     l_new, b_new, d_new = cartesian_to_galactic(shifted_x, shifted_y, shifted_z)
 
-    # Transform magnitudes based on new distances
-    new_mag = transform_mag(mag, distance_pc_gaia, d_new)
+    # Adjust phot_g_mean_mag based on distance to the specified planet
+    new_mag = transform_mag(mag, distance_pc_gaia, distance_pc)
 
-    sizes = 10 ** (0.4 * (12 - new_mag))  # Adjust constant for size scaling
+    sizes = 5 * 10 ** (0.4 * (12 - new_mag))  # Using adjusted magnitude for sizes
+
+    l_new_shifted = np.where(l_new > 180, l_new - 360, l_new)
 
     # Get star colors based on bp_rp, bp_g, g_rp
     star_colors = color_stars(bp_rp, bp_g, g_rp)
@@ -110,17 +129,12 @@ def query_postgresql_and_create_png(
     fig, ax = plt.subplots(figsize=(160, 40))
 
     # Use the 'c' argument for color mapping
-    scatter = ax.scatter(l_new, b_new, s=sizes, c=bp_rp, cmap="cividis",
-                         alpha=0.7)  # Updated to use 'c' instead of 'color'
+    scatter = ax.scatter(l_new_shifted, b_new, s=sizes, c=bp_rp, cmap="cividis",
+                         alpha=0.7)
 
     # Fix the aspect ratio and limits
     ax.set_aspect("equal", adjustable="box")
-    ax.set_xlim(0, 360)
-    ax.set_ylim(-90, 90)
-    ax.set_facecolor("black")  # Ensure background is black
-
-    # Optional: add a color bar for reference
-    plt.colorbar(scatter, label='BP-RP Color Index')  # Add color bar to provide reference
+    ax.set_facecolor("black")
 
     plt.tight_layout()
 
@@ -130,5 +144,8 @@ def query_postgresql_and_create_png(
 
 
 if __name__ == "__main__":
-    # Example: Plot the sky from the perspective of a planet with galactic coordinates (225, 0) and 10 pc away
-    query_postgresql_and_create_png("Planet A", 225, 0, 10)
+    # Example usage: Fetch coordinates for Kepler-186f and create a PNG
+    try:
+        query_postgresql_and_create_png("Kepler-186f", distance_pc=500)
+    except ValueError as e:
+        print(e)
