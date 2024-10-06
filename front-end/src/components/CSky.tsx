@@ -146,30 +146,41 @@ export function CSky() {
          }
       };
 
-      const handleClick = (event: MouseEvent) => {
-         const target = event.target as HTMLElement;
-         if (target.tagName.toLowerCase() === 'button') return;
+      const handleMouseDown = (event: MouseEvent) => {
+         console.log("Mouse button clicked:", event.button);
 
-         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+         // Right click to create dots
+         if (event.button === 2) {
+            event.preventDefault();
 
-         raycaster.setFromCamera(mouse, camera!);
-         raycaster.far = 1000;
+            console.log("Right click detected");
 
-         const intersects = raycaster.intersectObjects([sphere], false);
+            if (!isDrawingMode) return;
 
-         if (intersects.length > 0) {
-            const intersectedPoint = intersects[0].point.clone();
+            const target = event.target as HTMLElement;
+            if (target.tagName.toLowerCase() === 'button') return;
 
-            if (isDrawingMode && canCreateDot) {
-               createDot(intersectedPoint);
-               pointsRef.current.push(intersectedPoint);
-               updateLine();
-            } else {
-               if (intersects[0].object === planetX) {
-                  planetX.material.color.set('yellow');
-               } else if (intersects[0].object === planetY) {
-                  planetY.material.color.set('yellow');
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera!);
+            raycaster.far = 1000;
+
+            const intersects = raycaster.intersectObjects([sphere]);
+
+            if (intersects.length > 0) {
+               const intersectedPoint = intersects[0].point.clone();
+
+               if (canCreateDot) {
+                  createDot(intersectedPoint);
+                  pointsRef.current.push(intersectedPoint);
+                  updateLine();
+               } else {
+                  if (intersects[0].object === planetX) {
+                     planetX.material.color.set('yellow');
+                  } else if (intersects[0].object === planetY) {
+                     planetY.material.color.set('yellow');
+                  }
                }
             }
          } else {
@@ -177,8 +188,15 @@ export function CSky() {
          }
       };
 
+      // Prevent context menu
+      const handleContextMenu = (event: MouseEvent) => {
+         event.preventDefault();
+         console.log("Context menu prevented");
+      };
+
       window.addEventListener('mousemove', handleHover);
-      window.addEventListener('click', handleClick);
+      window.addEventListener('mousedown', handleMouseDown);
+      window.addEventListener('contextmenu', handleContextMenu);
 
       const animate = () => {
          requestAnimationFrame(animate);
@@ -198,7 +216,8 @@ export function CSky() {
 
       return () => {
          window.removeEventListener('mousemove', handleHover);
-         window.removeEventListener('click', handleClick);
+         window.removeEventListener('mousedown', handleMouseDown);
+         window.removeEventListener('contextmenu', handleContextMenu);
          mount.removeChild(renderer.domElement);
       };
    }, [isDrawingMode, canCreateDot, cameraPosition, cameraRotation]);
