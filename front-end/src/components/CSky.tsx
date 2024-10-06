@@ -9,10 +9,13 @@ export function CSky() {
    const mountRef = useRef<HTMLDivElement>(null);
    const [camera, setCamera] = useState<THREE.PerspectiveCamera | null>(null);
    const [controls, setControls] = useState<OrbitControls | null>(null);
+   const [isDrawingMode, setIsDrawingMode] = useState<boolean>(false);
+   const [canCreateDot, setCanCreateDot] = useState<boolean>(false);
+   const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(150, 0, 40));
+   const [cameraRotation, setCameraRotation] = useState<THREE.Euler>(new THREE.Euler(0, 0, 0));
    const scene = new THREE.Scene();
    const planetXTextMeshRef = useRef<THREE.Mesh | null>(null);
    const planetYTextMeshRef = useRef<THREE.Mesh | null>(null);
-
    const pointsRef = useRef<THREE.Vector3[]>([]);
    const linesRef = useRef<THREE.Line[]>([]);
 
@@ -20,7 +23,7 @@ export function CSky() {
       // Set up camera and renderer
       const mount = mountRef.current!;
       const camera = new THREE.PerspectiveCamera(75, mount.clientWidth / mount.clientHeight, 0.1, 2000);
-      const renderer = new THREE.WebGLRenderer();
+      const renderer = new THREE.WebGLRenderer({ alpha: true });
       renderer.setSize(mount.clientWidth, mount.clientHeight);
       mount.appendChild(renderer.domElement);
 
@@ -40,15 +43,14 @@ export function CSky() {
       const planetX = new THREE.Mesh(planetGeometry, planetXMaterial);
       const planetY = new THREE.Mesh(planetGeometry, planetYMaterial);
 
-      //.position.set(front/back, up/down, left/right);
       planetX.position.set(-470, 0, -50);
       planetY.position.set(-450, 50, 150);
 
       scene.add(planetX);
       scene.add(planetY);
 
-      // Set camera position
-      camera.position.set(150, 0, 40);
+      camera.position.copy(cameraPosition);
+      camera.rotation.copy(cameraRotation);
 
       // Set up OrbitControls
       const controls = new OrbitControls(camera, renderer.domElement);
@@ -65,14 +67,14 @@ export function CSky() {
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
 
-      // Create text mesh for PlanetX and PlanetY, but initially invisible
+      // Create text mesh for PlanetX and PlanetY
       const createTextMesh = (text: string, position: THREE.Vector3, ref: React.MutableRefObject<THREE.Mesh | null>) => {
          const loader = new FontLoader();
          loader.load('/myFont.json', (font) => {
             const textGeometry = new TextGeometry(text, {
                font: font,
                size: 10,
-               height: 1,
+               depth: 1,
                curveSegments: 12,
                bevelEnabled: false,
             });
@@ -83,15 +85,14 @@ export function CSky() {
             textMesh.rotateY(20);
             scene.add(textMesh);
 
-            textMesh.visible = false;  // Initially make it invisible
+            textMesh.visible = false; 
             ref.current = textMesh;
          });
       };
 
-      createTextMesh("Planet X", new THREE.Vector3(-470, 0, -60), planetXTextMeshRef); // Create text mesh for Planet X
-      createTextMesh("Planet Y", new THREE.Vector3(-450, 50, 140), planetYTextMeshRef); // Create text mesh for Planet Y
+      createTextMesh("Planet X", new THREE.Vector3(-470, 0, -60), planetXTextMeshRef);
+      createTextMesh("Planet Y", new THREE.Vector3(-450, 50, 140), planetYTextMeshRef);
 
-      // Handle mouse hover
       const handleHover = (event: MouseEvent) => {
          mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
          mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -102,7 +103,6 @@ export function CSky() {
          if (intersects.length > 0) {
             const intersectedObject = intersects[0].object;
 
-            // Show or hide the appropriate text mesh based on the planet being hovered
             if (intersectedObject === planetX && planetXTextMeshRef.current) {
                planetXTextMeshRef.current.visible = true;
                if (planetYTextMeshRef.current) planetYTextMeshRef.current.visible = false;
@@ -111,15 +111,11 @@ export function CSky() {
                if (planetXTextMeshRef.current) planetXTextMeshRef.current.visible = false;
             }
          } else {
-            // Hide both texts when no planet is hovered
             if (planetXTextMeshRef.current) planetXTextMeshRef.current.visible = false;
             if (planetYTextMeshRef.current) planetYTextMeshRef.current.visible = false;
          }
       };
 
-      window.addEventListener('mousemove', handleHover);
-
-      // Create a dot at the given position
       const createDot = (position: THREE.Vector3) => {
          const dotGeometry = new THREE.SphereGeometry(5, 32, 32);
          const dotMaterial = new THREE.MeshBasicMaterial({ color: 'white' });
@@ -129,7 +125,6 @@ export function CSky() {
          scene.add(dot);
       };
 
-      // Create a line between two points
       const createLine = (point1: THREE.Vector3, point2: THREE.Vector3) => {
          const material = new THREE.LineBasicMaterial({ color: 'white' });
          const points = [point1, point2];
@@ -140,7 +135,6 @@ export function CSky() {
          linesRef.current.push(line);
       };
 
-      // Update the line between the last two points
       const updateLine = () => {
          const points = pointsRef.current;
 
@@ -152,60 +146,51 @@ export function CSky() {
          }
       };
 
-      // Handle mouse clicks (for color change)
       const handleClick = (event: MouseEvent) => {
-         const rect = renderer.domElement.getBoundingClientRect();
+         const target = event.target as HTMLElement;
+         if (target.tagName.toLowerCase() === 'button') return;
 
          mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
          mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
          raycaster.setFromCamera(mouse, camera!);
-
          raycaster.far = 1000;
 
          const intersects = raycaster.intersectObjects([sphere], false);
 
-         // If the ray intersects with the sphere, create a dot at the intersection point
          if (intersects.length > 0) {
-            const intersectedObject = intersects[0].object;
             const intersectedPoint = intersects[0].point.clone();
 
-            console.log('Intersected point:', intersectedPoint);
-
-            createDot(intersectedPoint); // Create a dot at the intersection point
-
-            pointsRef.current.push(intersectedPoint); // Add the intersection point to the points array
-
-            updateLine(); // Update the line between the last two points
-
-            if (intersectedObject === planetX) {
-               console.log('Planet X clicked!');
-               planetX.material.color.set('yellow');
-            } else if (intersectedObject === planetY) {
-               console.log('Planet Y clicked!');
-               planetY.material.color.set('yellow');
+            if (isDrawingMode && canCreateDot) {
+               createDot(intersectedPoint);
+               pointsRef.current.push(intersectedPoint);
+               updateLine();
+            } else {
+               if (intersects[0].object === planetX) {
+                  planetX.material.color.set('yellow');
+               } else if (intersects[0].object === planetY) {
+                  planetY.material.color.set('yellow');
+               }
             }
-         }
-         else {
+         } else {
             console.log('No intersection');
          }
       };
 
+      window.addEventListener('mousemove', handleHover);
       window.addEventListener('click', handleClick);
 
-      // Animation loop
       const animate = () => {
          requestAnimationFrame(animate);
          controls.update();
 
-         // Make the text always face the camera (billboard effect)
          if (planetXTextMeshRef.current) {
             planetXTextMeshRef.current.lookAt(camera!.position);
          }
          if (planetYTextMeshRef.current) {
             planetYTextMeshRef.current.lookAt(camera!.position);
          }
-         
+
          renderer.render(scene, camera);
       };
 
@@ -216,7 +201,42 @@ export function CSky() {
          window.removeEventListener('click', handleClick);
          mount.removeChild(renderer.domElement);
       };
-   }, []);
+   }, [isDrawingMode, canCreateDot, cameraPosition, cameraRotation]);
 
-   return <div ref={mountRef} style={{ width: '100%', height: '100vh' }} />;
+   // Function to reset the canvas
+   const resetCanvas = () => {
+      pointsRef.current = []; // Clear points
+      linesRef.current.forEach(line => scene.remove(line)); // Remove all lines from the scene
+      linesRef.current = []; // Clear lines reference
+   };
+
+   const toggleMode = () => {
+      if (camera) {
+         setCameraPosition(camera.position.clone());
+         setCameraRotation(camera.rotation.clone());
+      }
+
+      if (isDrawingMode) {
+         resetCanvas(); // Reset canvas when switching to drawing mode
+      }
+
+      setIsDrawingMode((prev) => {
+         const newMode = !prev;
+         setCanCreateDot(newMode);
+         return newMode;
+      });
+
+      if (controls) {
+         controls.enabled = !isDrawingMode;
+      }
+   };
+
+   return (
+      <div>
+         <button onClick={toggleMode} style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 10, backgroundColor: 'white' }}>
+            {isDrawingMode ? 'Switch to Camera Mode' : 'Switch to Drawing Mode'}
+         </button>
+         <div ref={mountRef} style={{ width: '100%', height: '100vh' }} />
+      </div>
+   );
 }
