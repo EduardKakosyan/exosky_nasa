@@ -55,7 +55,7 @@ def query_postgres():
 
     # Query for the relevant data
     cur.execute(
-        "SELECT x, y, z, parallax, phot_g_mean_mag, bp_rp, bp_g, g_rp FROM star_data LIMIT 5000000;"
+        "SELECT x, y, z, parallax, phot_g_mean_mag, bp_rp, bp_g, g_rp FROM star_data LIMIT 2000000;"
     )
     rows = cur.fetchall()
 
@@ -98,6 +98,18 @@ def create_star_colors(bp_rp, bp_g, g_rp, new_mag):
     return star_colors
 
 
+def compute_new_phot_g_mean_cartesian(phot_g_mean_mag_earth, x_stars, y_stars, z_stars, x_planet, y_planet, z_planet):
+    # Compute distance from Earth to each star (Earth is at (0, 0, 0))
+    d_earth = np.sqrt(x_stars ** 2 + y_stars ** 2 + z_stars ** 2)
+
+    # Compute distance from the exoplanet to each star
+    d_planet = np.sqrt((x_stars - x_planet) ** 2 + (y_stars - y_planet) ** 2 + (z_stars - z_planet) ** 2)
+
+    # Apply the distance modulus formula to compute new phot_g_mean_mag
+    new_phot_g_mean_mag = phot_g_mean_mag_earth + 5 * np.log10(d_planet / d_earth)
+
+    return new_phot_g_mean_mag
+
 def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_pc):
     # Query PostgreSQL to get star data
     result = query_postgres()
@@ -117,10 +129,12 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
     shifted_z = z_gaia - planet_z
 
     # Convert back to galactic coordinates
-    l_new, b_new, _ = cartesian_to_galactic(shifted_x, shifted_y, shifted_z)
+    l_new, b_new, distance_new = cartesian_to_galactic(shifted_x, shifted_y, shifted_z)
+
+    new_mag = compute_new_phot_g_mean_cartesian(mag, x_gaia, y_gaia, z_gaia, planet_x, planet_y, planet_z)
 
     # Normalize the new magnitude to use as sizes (smaller magnitude -> larger size)
-    sizes_random = 10 ** (0.4 * (12 - mag))  # Adjust constant to scale sizes appropriately
+    sizes_random = 10 ** (0.4 * (12 - new_mag))  # Adjust constant to scale sizes appropriately
 
     # Plot the data
     plt.figure(figsize=(160, 40))
