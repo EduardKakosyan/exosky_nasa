@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { CSky } from './components/CSky'
+import { HomeBackground } from './layout/home-background'
 
 function App() {
-  const [count, setCount] = useState(0)
 
   return (
-    <>
-      <CSky />
-    </>
+    <main className='w-screen h-screen'>
+      <HomeBackground />
+    </main>
 
   )
 }

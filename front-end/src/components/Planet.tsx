@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Mesh } from 'three';
 import { useTexture } from '@react-three/drei';
-import { i } from 'framer-motion/client';
 
 type Props = {
    imgSrc: string;
@@ -14,7 +13,7 @@ function RotatingSphere({ imgSrc }: Props) {
 
    useFrame(() => {
       if (sphereRef.current) {
-         sphereRef.current.rotation.y += 0.01;
+         sphereRef.current.rotation.y += 0.005;
       }
    });
 
@@ -28,10 +27,13 @@ function RotatingSphere({ imgSrc }: Props) {
 
 export function Planet({ imgSrc }: Props) {
    return (
-      <Canvas>
-         <ambientLight intensity={6}/>
-         <pointLight position={[0, 0, 10]} intensity={20}/>
-         <RotatingSphere imgSrc={imgSrc} />
-      </Canvas>
+      <div className='w-[180px]'>
+         <Canvas>
+            <ambientLight intensity={6}/>
+            <pointLight position={[0, 0, 10]} intensity={20}/>
+            <RotatingSphere imgSrc={imgSrc} />
+         </Canvas>
+      </div>
+      
    );
 }
