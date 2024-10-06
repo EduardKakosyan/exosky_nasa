@@ -4,21 +4,33 @@ import matplotlib.pyplot as plt
 from astroquery.gaia import Gaia
 from astropy import units as u
 import numpy as np
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import Galactic, CartesianRepresentation
 
 os.environ["SSL_CERT_FILE"] = certifi.where()
 
 def galactic_to_cartesian(l, b, distance_pc):
-    coord = SkyCoord(l=l * u.degree, b=b * u.degree, distance=distance_pc, frame='galactic')
-    return coord.cartesian.x.value, coord.cartesian.y.value, coord.cartesian.z.value
+    galactic_coord = Galactic(l=l*u.deg, b=b*u.deg, distance=distance_pc*u.pc)
+    
+    # Convert to Cartesian representation
+    cartesian_coord = galactic_coord.cartesian
+
+    # Extract x, y, z in parsecs
+    x = cartesian_coord.x.value
+    y = cartesian_coord.y.value
+    z = cartesian_coord.z.value
+    
+    return x, y, z
 
 def cartesian_to_galactic(x, y, z):
-    coord = SkyCoord(x=x * u.pc, y=y * u.pc, z=z * u.pc, representation_type='cartesian')
+    cartesian_coord = CartesianRepresentation(x=x*u.pc, y=y*u.pc, z=z*u.pc)
     
-    # Convert to galactic coordinates
-    l = coord.galactic.l.deg
-    b = coord.galactic.b.deg
-    distance = coord.galactic.distance.pc
+    # Convert to Galactic coordinates
+    galactic_coord = Galactic(cartesian_coord)
+    
+    # Extract Galactic longitude, latitude, and distance
+    l = galactic_coord.l.deg
+    b = galactic_coord.b.deg
+    distance = galactic_coord.distance.pc
     
     return l, b, distance
 
@@ -78,8 +90,8 @@ def query_gaia_and_create_png(planet_name, galactic_long, galactic_lat, distance
     plt.ylabel("Galactic Latitude (degrees)", fontsize=18)
 
     # Set axis limits
-    plt.xlim(-180, 180)  # x-axis now ranges from -180° to 180°
-    plt.ylim(-90, 90)  # b ranges from -90° to 90°
+    # plt.xlim(-180, 180)  # x-axis now ranges from -180° to 180°
+    # plt.ylim(-90, 90)  # b ranges from -90° to 90°
 
     # Set title and background color
     plt.title(f"Sky Image from Gaia Data (Galactic Coordinates) - {planet_name}", fontsize=24)
@@ -90,7 +102,7 @@ def query_gaia_and_create_png(planet_name, galactic_long, galactic_lat, distance
     plt.close()  # Close the plot to free up memory
     
 if __name__ == "__main__":
-    query_gaia_and_create_png("Planet A", 225, 0, 10)
+    query_gaia_and_create_png("Planet A", 0, 0, 0)
 
 
 
