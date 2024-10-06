@@ -68,25 +68,28 @@ export function CSky() {
       };
 
       const handleMouseDown = (event: MouseEvent) => {
+         // Check if we are in drawing mode
+         if (!isDrawingMode) return; // If not in drawing mode, ignore the event
+      
          // Check for right-click (button 2)
          if (event.button === 2) {
             event.preventDefault(); // Prevent the context menu
-
+      
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
+      
             raycaster.setFromCamera(mouse, camera!);
             raycaster.far = 1000;
-
+      
             const intersects = raycaster.intersectObjects([...pointsRef.current, sphere]);
-
+      
             if (intersects.length > 0) {
                const intersectedObject = intersects[0].object;
-
+      
                // If a dot is clicked, select it for line creation
                if (pointsRef.current.includes(intersectedObject as THREE.Mesh)) {
                   const clickedDot = intersectedObject as THREE.Mesh;
-
+      
                   setSelectedDots((prevSelectedDots) => {
                      if (prevSelectedDots.includes(clickedDot)) {
                         return prevSelectedDots; // Ignore if already selected
@@ -108,6 +111,7 @@ export function CSky() {
             }
          }
       };
+      
 
       window.addEventListener('mousedown', handleMouseDown);
 
