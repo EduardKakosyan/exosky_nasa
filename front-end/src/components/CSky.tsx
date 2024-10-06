@@ -1,8 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js';
-import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js';
 
 export function CSky() {
    const imageSrc: string = 'sky_image.png';
@@ -70,40 +68,43 @@ export function CSky() {
       };
 
       const handleMouseDown = (event: MouseEvent) => {
-         event.preventDefault();
+         // Check for right-click (button 2)
+         if (event.button === 2) {
+            event.preventDefault(); // Prevent the context menu
 
-         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-         raycaster.setFromCamera(mouse, camera!);
-         raycaster.far = 1000;
+            raycaster.setFromCamera(mouse, camera!);
+            raycaster.far = 1000;
 
-         const intersects = raycaster.intersectObjects([...pointsRef.current, sphere]);
+            const intersects = raycaster.intersectObjects([...pointsRef.current, sphere]);
 
-         if (intersects.length > 0) {
-            const intersectedObject = intersects[0].object;
+            if (intersects.length > 0) {
+               const intersectedObject = intersects[0].object;
 
-            // If a dot is clicked, select it for line creation
-            if (pointsRef.current.includes(intersectedObject as THREE.Mesh)) {
-               const clickedDot = intersectedObject as THREE.Mesh;
+               // If a dot is clicked, select it for line creation
+               if (pointsRef.current.includes(intersectedObject as THREE.Mesh)) {
+                  const clickedDot = intersectedObject as THREE.Mesh;
 
-               setSelectedDots((prevSelectedDots) => {
-                  if (prevSelectedDots.includes(clickedDot)) {
-                     return prevSelectedDots; // Ignore if already selected
-                  }
-                  const newSelectedDots = [...prevSelectedDots, clickedDot];
-                  if (newSelectedDots.length === 2) {
-                     // Create a line between the two selected dots
-                     createLineBetweenDots(newSelectedDots[0], newSelectedDots[1]);
-                     return []; // Reset selection after creating the line
-                  }
-                  return newSelectedDots;
-               });
-            } 
-            // If the sphere is clicked (empty space), create a dot
-            else if (intersectedObject === sphere) {
-               const intersectedPoint = intersects[0].point.clone();
-               createDot(intersectedPoint);
+                  setSelectedDots((prevSelectedDots) => {
+                     if (prevSelectedDots.includes(clickedDot)) {
+                        return prevSelectedDots; // Ignore if already selected
+                     }
+                     const newSelectedDots = [...prevSelectedDots, clickedDot];
+                     if (newSelectedDots.length === 2) {
+                        // Create a line between the two selected dots
+                        createLineBetweenDots(newSelectedDots[0], newSelectedDots[1]);
+                        return []; // Reset selection after creating the line
+                     }
+                     return newSelectedDots;
+                  });
+               } 
+               // If the sphere is clicked (empty space), create a dot
+               else if (intersectedObject === sphere) {
+                  const intersectedPoint = intersects[0].point.clone();
+                  createDot(intersectedPoint);
+               }
             }
          }
       };
