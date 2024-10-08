@@ -2,7 +2,11 @@
 
 This module contains the writer class for writing to the database.
 
-@Author: Eduard Kakosyan
+Functions:
+    writer: Inserts data into the specified table.
+
+:author: Eduard Kakosyan
+:date: 2024-10-05
 """
 
 import psycopg2
@@ -13,7 +17,14 @@ from psycopg2 import sql, extras
 
 
 def writer(data, table_name, conn):
-    """Inserts data into the specified table."""
+    """Inserts data into the specified table.
+
+    :param data: the data to insert
+    :param table_name: the table to insert the data into
+    :param conn: the database connection
+
+    :return: the count of inserted rows
+    """
     if not data:
         return 0
 
