@@ -1,3 +1,5 @@
+"""Main script to query star data and plot the Milky Way from Kepler-186f's perspective."""
+
 import logging
 import psycopg2
 import numpy as np

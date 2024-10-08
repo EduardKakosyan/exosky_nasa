@@ -103,7 +103,9 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
     print(x_gaia[0])
 
     # Convert the exoplanet's galactic coordinates to Cartesian
-    planet_x, planet_y, planet_z = galactic_to_cartesian(galactic_long, galactic_lat, distance_pc)
+    planet_x, planet_y, planet_z = galactic_to_cartesian(
+        galactic_long, galactic_lat, distance_pc
+    )
 
     print(planet_x)
 
@@ -119,9 +121,12 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
     new_mag = transform_mag(mag, distance_pc_gaia, distance_pc)
 
     normalized_distances = (distance_pc_gaia - np.min(distance_pc_gaia)) / (
-                np.max(distance_pc_gaia) - np.min(distance_pc_gaia))
+        np.max(distance_pc_gaia) - np.min(distance_pc_gaia)
+    )
 
-    sizes = (2 ** ((-0.4) * (new_mag - np.median(new_mag)))) * (1 - normalized_distances)
+    sizes = (2 ** ((-0.4) * (new_mag - np.median(new_mag)))) * (
+        1 - normalized_distances
+    )
     sizes = sizes * 0.1  # Reduced scaling factor
     threshold = 1  # Lowered threshold
     sizes[sizes < threshold] = 0
@@ -133,14 +138,21 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
     brightest_star_indices = np.argsort(new_mag)[:20]
 
     # Plotting
-    plt.figure(figsize=(80, 20))  # Adjusted figure size to better resemble the Milky Way proportions
+    plt.figure(
+        figsize=(80, 20)
+    )  # Adjusted figure size to better resemble the Milky Way proportions
     l_new_shifted = np.where(l_new > 180, l_new - 360, l_new)
 
     # Plot all stars except the brightest 30
     scatter = plt.scatter(l_new_shifted, b_new, s=sizes, color=star_colors, alpha=0.8)
 
-    scatter = plt.scatter(l_new_shifted[brightest_star_indices], b_new[brightest_star_indices],
-                          s=sizes[brightest_star_indices], color=star_colors[brightest_star_indices], alpha=1.0)
+    scatter = plt.scatter(
+        l_new_shifted[brightest_star_indices],
+        b_new[brightest_star_indices],
+        s=sizes[brightest_star_indices],
+        color=star_colors[brightest_star_indices],
+        alpha=1.0,
+    )
 
     plt.title(f"Stars around {planet_name}")
     plt.xlabel("Galactic Longitude (degrees)")

@@ -9,6 +9,7 @@ from matplotlib.colors import Normalize
 
 os.environ["SSL_CERT_FILE"] = certifi.where()
 
+
 def galactic_to_cartesian(l, b, distance_pc):
     galactic_coord = Galactic(l=l * u.deg, b=b * u.deg, distance=distance_pc * u.pc)
 
@@ -78,6 +79,7 @@ def query_postgres():
 
     return x_gaia, y_gaia, z_gaia, distance_pc_gaia, mag, bp_rp, bp_g, g_rp
 
+
 def create_star_colors(bp_rp, bp_g, g_rp, new_mag):
     """Map star colors based on bp_rp and adjust brightness."""
     # Normalize bp_rp values for color mapping
@@ -98,17 +100,24 @@ def create_star_colors(bp_rp, bp_g, g_rp, new_mag):
     return star_colors
 
 
-def compute_new_phot_g_mean_cartesian(phot_g_mean_mag_earth, x_stars, y_stars, z_stars, x_planet, y_planet, z_planet):
+def compute_new_phot_g_mean_cartesian(
+    phot_g_mean_mag_earth, x_stars, y_stars, z_stars, x_planet, y_planet, z_planet
+):
     # Compute distance from Earth to each star (Earth is at (0, 0, 0))
-    d_earth = np.sqrt(x_stars ** 2 + y_stars ** 2 + z_stars ** 2)
+    d_earth = np.sqrt(x_stars**2 + y_stars**2 + z_stars**2)
 
     # Compute distance from the exoplanet to each star
-    d_planet = np.sqrt((x_stars - x_planet) ** 2 + (y_stars - y_planet) ** 2 + (z_stars - z_planet) ** 2)
+    d_planet = np.sqrt(
+        (x_stars - x_planet) ** 2
+        + (y_stars - y_planet) ** 2
+        + (z_stars - z_planet) ** 2
+    )
 
     # Apply the distance modulus formula to compute new phot_g_mean_mag
     new_phot_g_mean_mag = phot_g_mean_mag_earth + 5 * np.log10(d_planet / d_earth)
 
     return new_phot_g_mean_mag
+
 
 def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_pc):
     # Query PostgreSQL to get star data
@@ -121,7 +130,9 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
     # Calculate distance based on the returned parallax dat
 
     # Convert the exoplanet's galactic coordinates to Cartesian
-    planet_x, planet_y, planet_z = galactic_to_cartesian(galactic_long, galactic_lat, distance_pc)
+    planet_x, planet_y, planet_z = galactic_to_cartesian(
+        galactic_long, galactic_lat, distance_pc
+    )
 
     # Shift the star positions to make the exoplanet the new origin
     shifted_x = x_gaia - planet_x
@@ -131,10 +142,14 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
     # Convert back to galactic coordinates
     l_new, b_new, distance_new = cartesian_to_galactic(shifted_x, shifted_y, shifted_z)
 
-    new_mag = compute_new_phot_g_mean_cartesian(mag, x_gaia, y_gaia, z_gaia, planet_x, planet_y, planet_z)
+    new_mag = compute_new_phot_g_mean_cartesian(
+        mag, x_gaia, y_gaia, z_gaia, planet_x, planet_y, planet_z
+    )
 
     # Normalize the new magnitude to use as sizes (smaller magnitude -> larger size)
-    sizes_random = 10 ** (0.4 * (12 - new_mag))  # Adjust constant to scale sizes appropriately
+    sizes_random = 10 ** (
+        0.4 * (12 - new_mag)
+    )  # Adjust constant to scale sizes appropriately
 
     # Plot the data
     plt.figure(figsize=(160, 40))
@@ -150,11 +165,13 @@ def create_png_for_exoplanet(planet_name, galactic_long, galactic_lat, distance_
     plt.ylabel("Galactic Latitude (degrees)", fontsize=18)
 
     # Set title and background color
-    plt.title(f"Sky Image from Gaia Data (Galactic Coordinates) - {planet_name}", fontsize=24)
+    plt.title(
+        f"Sky Image from Gaia Data (Galactic Coordinates) - {planet_name}", fontsize=24
+    )
     plt.gca().set_facecolor("black")  # Set background to black to represent the sky
 
     # Save the plot to a file
-    plt.savefig(f'{planet_name}.png', facecolor="black")
+    plt.savefig(f"{planet_name}.png", facecolor="black")
     plt.close()  # Close the plot to free up memory
 
 
