@@ -4,7 +4,7 @@
 # Back End
 back-end/dist/
 back-end/pipeline/celestial/db/
-"*.png
+*.png
 *.jpg
 *.jpeg"
 
