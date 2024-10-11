@@ -1,11 +1,11 @@
 FROM python:3.12.4
 
-WORKDIR /app
+WORKDIR /code
 
-COPY . /app
+COPY ./requirements.txt /code/requirements.txt
 
-RUN pip install --trusted-host pypi.python.org -r requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-EXPOSE 8000
+COPY . /code/app
 
-CMD ["python", "server.py"]
+CMD ["fastapi", "run", "app/server.py", "--port", "8000"]
