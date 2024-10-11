@@ -28,6 +28,7 @@ export function SkyInteractive({ imgSrc }: Props) {
    const pointsRef = useRef<THREE.Mesh[]>([]); // Store dots as meshes
    const linesRef = useRef<THREE.Line[]>([]);
    const setDots = useState<THREE.Vector3[]>([])[1];
+   const [isLoading, setIsLoading] = useState(true);
 
    useEffect(() => {
       const mount = mountRef.current!;
@@ -38,7 +39,10 @@ export function SkyInteractive({ imgSrc }: Props) {
 
       const geometry = new THREE.SphereGeometry(500, 64, 32);
       geometry.scale(-1, 1, 1);
-      const texture = new THREE.TextureLoader().load(imageSrc);
+      const textureLoader = new THREE.TextureLoader();
+      const texture = textureLoader.load(imageSrc, () => {
+         setIsLoading(false); 
+      });
       const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
       const sphere = new THREE.Mesh(geometry, material);
       scene.add(sphere);
@@ -52,7 +56,7 @@ export function SkyInteractive({ imgSrc }: Props) {
       controls.enableZoom = true;
       controls.zoomSpeed = 2;
       controls.minDistance = 1;
-      controls.maxDistance = 500;
+      controls.maxDistance = 450;
 
       setCamera(camera);
       setControls(controls);
@@ -62,7 +66,7 @@ export function SkyInteractive({ imgSrc }: Props) {
 
       // Function to create a dot
       const createDot = (position: THREE.Vector3) => {
-         const dotGeometry = new THREE.SphereGeometry(5, 32, 32);
+         const dotGeometry = new THREE.SphereGeometry(1, 32, 32);
          const dotMaterial = new THREE.MeshBasicMaterial({ color: 'white' });
          const dot = new THREE.Mesh(dotGeometry, dotMaterial);
 
@@ -161,6 +165,12 @@ export function SkyInteractive({ imgSrc }: Props) {
 
    return (
       <div>
+         {isLoading && (
+            <div className='absolute inset-0 flex items-center justify-center bg-black bg-opacity-70'>
+               <p className='text-white text-1xl'>Loading Image...</p>
+            </div>
+         )}
+
          <button className="p-[3px] absolute top-5 left-5 z-10 bg-white  rounded-md" onClick={toggleMode}>
             <div className="absolute inset-0 bg-gradient-to-r from-sky-500 to-blue-500 rounded-lg" />
             <div className="px-4 py-2 bg-black rounded-[6px]  relative group transition duration-200 text-white hover:bg-transparent">
@@ -168,7 +178,7 @@ export function SkyInteractive({ imgSrc }: Props) {
             </div>
          </button>
 
-         <button onClick={home} className='absolute right-5 top-5 border border-white rounded-full p-2'>
+         <button onClick={home} className='absolute right-5 top-5 border border-blue-500 rounded-full p-2'>
             <HomeIcon className='w-7 h-7 text-white' />
          </button>
 
