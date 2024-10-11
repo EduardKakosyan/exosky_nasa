@@ -10,7 +10,7 @@ type Props = {
    imgSrc: string;
 };
 
-export function CSky({ imgSrc }: Props) {
+export function SkyInteractive({ imgSrc }: Props) {
    const navigate = useNavigate();
    function home() {
       navigate('/');
