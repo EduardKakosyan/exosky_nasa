@@ -5,7 +5,7 @@ export const planetArray: PlanetObject[] = [
       name: "Earth", 
       imgSrc: "MapOfEarth.jpg", 
       href: "earth",
-      description: 'Our home',
+      description: 'Home',
       gLongitude: 0,
       gLatitude: 0,
    },
@@ -43,7 +43,7 @@ export const planetArray: PlanetObject[] = [
    },
    {
       name: "55 Cancri e", 
-      imgSrc: "MapOfEarth.jpg", 
+      imgSrc: "earth2.jpg", 
       href: "55",
       description: '55 Cancri e is a so-called super-Earth',
       gLongitude: 0,

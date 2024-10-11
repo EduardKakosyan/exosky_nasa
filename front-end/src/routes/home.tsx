@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ShootingStars } from "../components/ui/shooting-stars";
 import { StarsBackground } from "../components/ui/stars-background";
 import { ExploreButton } from "../components/explore-button";
-import { PlanetCard } from '../layout/planet-card'
+import { PlanetCard } from '../components/planet-card'
 import { HomeButton } from "../components/home-button";
 import { planetArray } from "../data/data";
 
