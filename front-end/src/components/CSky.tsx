@@ -21,12 +21,13 @@ export function CSky({ imgSrc }: Props) {
    const [camera, setCamera] = useState<THREE.PerspectiveCamera | null>(null);
    const [controls, setControls] = useState<OrbitControls | null>(null);
    const [isDrawingMode, setIsDrawingMode] = useState<boolean>(false);
-   const [_, setSelectedDots] = useState<THREE.Mesh[]>([]); 
+   const [_, setSelectedDots] = useState<THREE.Mesh[]>([]);
    const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(150, 0, 40));
    const [cameraRotation, setCameraRotation] = useState<THREE.Euler>(new THREE.Euler(0, 0, 0));
    const scene = new THREE.Scene();
    const pointsRef = useRef<THREE.Mesh[]>([]); // Store dots as meshes
    const linesRef = useRef<THREE.Line[]>([]);
+   const setDots = useState<THREE.Vector3[]>([])[1];
 
    useEffect(() => {
       const mount = mountRef.current!;
@@ -71,9 +72,9 @@ export function CSky({ imgSrc }: Props) {
       };
 
       // Function to create a line between two dots
-      const createLineBetweenDots = (dot1: THREE.Mesh, dot2: THREE.Mesh) => {
+      const createLine = (start: THREE.Vector3, end: THREE.Vector3) => {
          const material = new THREE.LineBasicMaterial({ color: 'white' });
-         const points = [dot1.position, dot2.position];
+         const points = [start, end];
          const geometry = new THREE.BufferGeometry().setFromPoints(points);
          const line = new THREE.Line(geometry, material);
          scene.add(line);
@@ -91,38 +92,32 @@ export function CSky({ imgSrc }: Props) {
             raycaster.setFromCamera(mouse, camera!);
             raycaster.far = 1000;
 
-            const intersects = raycaster.intersectObjects([...pointsRef.current, sphere]);
+            const intersects = raycaster.intersectObject(sphere);
 
             if (intersects.length > 0) {
-               const intersectedObject = intersects[0].object;
+               const intersectedPoint = intersects[0].point.clone();
+               createDot(intersectedPoint);
 
-               // If a dot is clicked, select it for line creation
-               if (pointsRef.current.includes(intersectedObject as THREE.Mesh)) {
-                  const clickedDot = intersectedObject as THREE.Mesh;
-
-                  setSelectedDots((prevSelectedDots) => {
-                     if (prevSelectedDots.includes(clickedDot)) {
-                        return prevSelectedDots; // Ignore if already selected
-                     }
-                     const newSelectedDots = [...prevSelectedDots, clickedDot];
-                     if (newSelectedDots.length === 2) {
-                        // Create a line between the two selected dots
-                        createLineBetweenDots(newSelectedDots[0], newSelectedDots[1]);
-                        return []; // Reset selection after creating the line
-                     }
-                     return newSelectedDots;
-                  });
-               } 
-               // If the sphere is clicked (empty space), create a dot
-               else if (intersectedObject === sphere) {
-                  const intersectedPoint = intersects[0].point.clone();
-                  createDot(intersectedPoint);
-               }
+               setDots((prevDots) => {
+                  if (prevDots.length === 1) {
+                     createLine(prevDots[0], intersectedPoint);
+                     return [intersectedPoint];
+                  } else {
+                     return [intersectedPoint];
+                  }
+               });
             }
          }
       };
 
+      const handleKeyDown = (event: KeyboardEvent) => {
+         if (event.key === 'c') {
+            setDots([]); // Clear positions
+         }
+      };
+
       window.addEventListener('mousedown', handleMouseDown);
+      window.addEventListener('keydown', handleKeyDown);
 
       const animate = () => {
          requestAnimationFrame(animate);
@@ -134,6 +129,7 @@ export function CSky({ imgSrc }: Props) {
 
       return () => {
          window.removeEventListener('mousedown', handleMouseDown);
+         window.removeEventListener('keydown', handleKeyDown);
          mount.removeChild(renderer.domElement);
       };
    }, [isDrawingMode, cameraPosition, cameraRotation]);
@@ -181,7 +177,7 @@ export function CSky({ imgSrc }: Props) {
                <LeftMouse className='w-5 h-5' />
                <p className='flex flex-1'>Move Camera</p>
             </div>
-            
+
            <div className='flex flex1 flex-row gap-3 items-center'>
                <RightMouse className='w-5 h-5' />
                <p className='flex flex-1'>Create and click-back to connect</p>
@@ -192,5 +188,5 @@ export function CSky({ imgSrc }: Props) {
       </div>
    );
 
-   
+
 }
