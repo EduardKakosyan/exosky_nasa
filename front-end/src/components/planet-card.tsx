@@ -1,4 +1,4 @@
-import { Planet } from "./planet";
+import { Planet } from "./planet.tsx";
 import { useNavigate } from "react-router-dom";
 import { PlanetObject } from "../types/types";
 
