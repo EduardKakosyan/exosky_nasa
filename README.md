@@ -1,7 +1,9 @@
 # Sky Painters: An Interactive Exoplanetary Sky Experience
 
 ## NASA Space Apps Challenge 2024
-Visit our website: [Sky Painters](https://skypainter.fly.dev/)
+Visit our website: [Sky Painters](https://skypainter.fly.dev/) 
+
+
 https://github.com/user-attachments/assets/1c1a8f44-ed77-40c1-a940-52181bc06906
 
 
