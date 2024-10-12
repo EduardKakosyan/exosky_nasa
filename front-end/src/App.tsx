@@ -1,4 +1,4 @@
-import { SkyInteractive } from './components/sky-interactive'
+import { SkyInteractive } from './routes/sky-interactive'
 import { Home } from './routes/home'
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
