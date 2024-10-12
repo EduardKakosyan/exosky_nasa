@@ -56,7 +56,13 @@ export function SkyInteractive({ imgSrc }: Props) {
       controls.enableZoom = true;
       controls.zoomSpeed = 2;
       controls.minDistance = 1;
-      controls.maxDistance = 450;
+      controls.maxDistance = 400;
+
+      controls.mouseButtons = {
+         LEFT: THREE.MOUSE.LEFT,
+         MIDDLE: THREE.MOUSE.MIDDLE,
+         RIGHT: null
+      };
 
       setCamera(camera);
       setControls(controls);
@@ -115,7 +121,7 @@ export function SkyInteractive({ imgSrc }: Props) {
       };
 
       const handleKeyDown = (event: KeyboardEvent) => {
-         if (event.key === 'c') {
+         if (event.key === 'c' || event.key === 'C') {
             setDots([]); // Clear positions
          }
       };
@@ -147,20 +153,13 @@ export function SkyInteractive({ imgSrc }: Props) {
    };
 
    const toggleMode = () => {
+      setDots([]); // Clear positions
+      resetCanvas();
       if (camera) {
          setCameraPosition(camera.position.clone());
          setCameraRotation(camera.rotation.clone());
       }
 
-      if (isDrawingMode) {
-         resetCanvas(); // Reset canvas when switching to drawing mode
-      }
-
-      setIsDrawingMode((prev) => !prev);
-
-      if (controls) {
-         controls.enabled = !isDrawingMode;
-      }
    };
 
    return (
