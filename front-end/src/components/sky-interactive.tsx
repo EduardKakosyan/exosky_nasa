@@ -6,21 +6,58 @@ import { RightMouse } from './icons/right-mouse';
 import { useNavigate } from 'react-router-dom';
 import { HomeIcon } from './icons/home-icon';
 
+// Function to create a dot
+function createDot(position: THREE.Vector3, scene: THREE.Scene, pointsRef: React.MutableRefObject<THREE.Mesh[]>) {
+   const dotGeometry = new THREE.SphereGeometry(1, 32, 32);
+   const dotMaterial = new THREE.MeshBasicMaterial({ color: 'white' });
+   const dot = new THREE.Mesh(dotGeometry, dotMaterial);
+
+   dot.position.copy(position);
+   scene.add(dot);
+   pointsRef.current.push(dot);
+};
+
+// Function to create a line between two dots
+function createLine(start: THREE.Vector3, end: THREE.Vector3, scene: THREE.Scene, linesRef: React.MutableRefObject<THREE.Line[]>) {
+   const material = new THREE.LineBasicMaterial({ color: 'white' });
+   const points = [start, end];
+   const geometry = new THREE.BufferGeometry().setFromPoints(points);
+   const line = new THREE.Line(geometry, material);
+   scene.add(line);
+   linesRef.current.push(line);
+};
+
+function resetCanvas(
+   pointsRef: React.MutableRefObject<THREE.Mesh[]>, 
+   linesRef: React.MutableRefObject<THREE.Line[]>, 
+   setSelectedDots: React.Dispatch<React.SetStateAction<THREE.Mesh[]>>,
+   scene: THREE.Scene
+) 
+{
+   pointsRef.current.forEach(dot => scene.remove(dot)); // Remove all dots
+   pointsRef.current = []; // Clear dots reference
+   linesRef.current.forEach(line => scene.remove(line)); // Remove all lines
+   linesRef.current = []; // Clear lines reference
+   setSelectedDots([]); // Reset selection
+};
+
+
+
 type Props = {
    imgSrc: string;
 };
 
 export function SkyInteractive({ imgSrc }: Props) {
+   // React Router navigation
    const navigate = useNavigate();
    function home() {
       navigate('/');
    }
 
+   // State and refs
    const imageSrc: string = imgSrc;
    const mountRef = useRef<HTMLDivElement>(null);
    const [camera, setCamera] = useState<THREE.PerspectiveCamera | null>(null);
-   const [controls, setControls] = useState<OrbitControls | null>(null);
-   const [isDrawingMode, setIsDrawingMode] = useState<boolean>(false);
    const [_, setSelectedDots] = useState<THREE.Mesh[]>([]);
    const [cameraPosition, setCameraPosition] = useState<THREE.Vector3>(new THREE.Vector3(150, 0, 40));
    const [cameraRotation, setCameraRotation] = useState<THREE.Euler>(new THREE.Euler(0, 0, 0));
@@ -30,13 +67,21 @@ export function SkyInteractive({ imgSrc }: Props) {
    const setDots = useState<THREE.Vector3[]>([])[1];
    const [isLoading, setIsLoading] = useState(true);
 
+   function toggleMode() {
+      setDots([]); // Clear positions
+      resetCanvas(pointsRef, linesRef, setSelectedDots, scene);
+      if (camera) {
+         setCameraPosition(camera.position.clone());
+         setCameraRotation(camera.rotation.clone());
+      }
+   };
+
    useEffect(() => {
       const mount = mountRef.current!;
       const camera = new THREE.PerspectiveCamera(75, mount.clientWidth / mount.clientHeight, 0.1, 2000);
       const renderer = new THREE.WebGLRenderer({ alpha: true });
       renderer.setSize(mount.clientWidth, mount.clientHeight);
       mount.appendChild(renderer.domElement);
-
       const geometry = new THREE.SphereGeometry(500, 64, 32);
       geometry.scale(-1, 1, 1);
       const textureLoader = new THREE.TextureLoader();
@@ -65,33 +110,12 @@ export function SkyInteractive({ imgSrc }: Props) {
       };
 
       setCamera(camera);
-      setControls(controls);
 
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
 
-      // Function to create a dot
-      const createDot = (position: THREE.Vector3) => {
-         const dotGeometry = new THREE.SphereGeometry(1, 32, 32);
-         const dotMaterial = new THREE.MeshBasicMaterial({ color: 'white' });
-         const dot = new THREE.Mesh(dotGeometry, dotMaterial);
 
-         dot.position.copy(position);
-         scene.add(dot);
-         pointsRef.current.push(dot);
-      };
-
-      // Function to create a line between two dots
-      const createLine = (start: THREE.Vector3, end: THREE.Vector3) => {
-         const material = new THREE.LineBasicMaterial({ color: 'white' });
-         const points = [start, end];
-         const geometry = new THREE.BufferGeometry().setFromPoints(points);
-         const line = new THREE.Line(geometry, material);
-         scene.add(line);
-         linesRef.current.push(line);
-      };
-
-      const handleMouseDown = (event: MouseEvent) => {
+      function handleMouseDown(event: MouseEvent) {
          // Check for right-click (button 2)
          if (event.button === 2) {
             event.preventDefault(); // Prevent the context menu
@@ -106,11 +130,11 @@ export function SkyInteractive({ imgSrc }: Props) {
 
             if (intersects.length > 0) {
                const intersectedPoint = intersects[0].point.clone();
-               createDot(intersectedPoint);
+               createDot(intersectedPoint, scene, pointsRef);
 
                setDots((prevDots) => {
                   if (prevDots.length === 1) {
-                     createLine(prevDots[0], intersectedPoint);
+                     createLine(prevDots[0], intersectedPoint, scene, linesRef);
                      return [intersectedPoint];
                   } else {
                      return [intersectedPoint];
@@ -120,7 +144,7 @@ export function SkyInteractive({ imgSrc }: Props) {
          }
       };
 
-      const handleKeyDown = (event: KeyboardEvent) => {
+      function handleKeyDown(event: KeyboardEvent) {
          if (event.key === 'c' || event.key === 'C') {
             setDots([]); // Clear positions
          }
@@ -142,34 +166,22 @@ export function SkyInteractive({ imgSrc }: Props) {
          window.removeEventListener('keydown', handleKeyDown);
          mount.removeChild(renderer.domElement);
       };
-   }, [isDrawingMode, cameraPosition, cameraRotation]);
 
-   const resetCanvas = () => {
-      pointsRef.current.forEach(dot => scene.remove(dot)); // Remove all dots
-      pointsRef.current = []; // Clear dots reference
-      linesRef.current.forEach(line => scene.remove(line)); // Remove all lines
-      linesRef.current = []; // Clear lines reference
-      setSelectedDots([]); // Reset selection
-   };
+   }, [cameraPosition, cameraRotation]);
 
-   const toggleMode = () => {
-      setDots([]); // Clear positions
-      resetCanvas();
-      if (camera) {
-         setCameraPosition(camera.position.clone());
-         setCameraRotation(camera.rotation.clone());
-      }
 
-   };
 
    return (
       <div>
+
+         {/* Loading image state component */}
          {isLoading && (
             <div className='absolute inset-0 flex items-center justify-center bg-black bg-opacity-70'>
-               <p className='text-white text-1xl'>Loading Image...</p>
+               <p className='text-white text-1xl'>Loading Sky...</p>
             </div>
          )}
 
+         {/* Clean Palette Component */}
          <button className="p-[3px] absolute top-5 left-5 z-10 bg-white  rounded-md" onClick={toggleMode}>
             <div className="absolute inset-0 bg-gradient-to-r from-sky-500 to-blue-500 rounded-lg" />
             <div className="px-4 py-2 bg-black rounded-[6px]  relative group transition duration-200 text-white hover:bg-transparent">
@@ -177,10 +189,12 @@ export function SkyInteractive({ imgSrc }: Props) {
             </div>
          </button>
 
+         {/* Home Button */}
          <button onClick={home} className='absolute right-5 top-5 border border-blue-500 rounded-full p-2'>
             <HomeIcon className='w-7 h-7 text-white' />
          </button>
 
+         {/* Instructions */}
          <div
              className='absolute bottom-5 right-10 z-10 text-white flex flex-col bg-black border border-blue-500 rounded-lg p-4 text-sm bg-opacity-70 gap-3'>
             <div className='flex flex1 flex-row gap-3 items-center'>
@@ -190,7 +204,7 @@ export function SkyInteractive({ imgSrc }: Props) {
 
             <div className='flex flex1 flex-row gap-3 items-center'>
                <RightMouse className='w-5 h-5'/>
-               <p className='flex flex-1'>Create and click-back to connect</p>
+               <p className='flex flex-1'>Connect Stars</p>
             </div>
 
             <div className='flex flex1 flex-row gap-3 items-center'>
@@ -202,6 +216,7 @@ export function SkyInteractive({ imgSrc }: Props) {
             </div>
          </div>
 
+         {/* Canvas */}
          <div ref={mountRef} style={{width: '100%', height: '100vh'}}/>
       </div>
    );
